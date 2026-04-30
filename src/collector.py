@@ -89,7 +89,7 @@ def get_memory_metrics():
 
 def get_disk_useage(path="/"):
     try:
-        disk_usage = psutil.disk_usage(Path)
+        disk_usage = psutil.disk_usage(path)
         return {
             "total_gb": bytes_to_gb(disk_usage.total),
             "used_gb": bytes_to_gb(disk_usage.used),
@@ -119,16 +119,16 @@ def get_disk_metrics():
     """
     try:
         result = []
-        for disk_parition in psutil.disk_partitions(all=True):
+        for disk_partition in psutil.disk_partitions(all=True):
             try:
-                mount = disk_parition.mountpoint
-                filesystem = disk_parition.fstype
-                disk_useage_info = get_disk_useage(Path=mount)
-                if not "error" in disk_useage_info:
+                mount = disk_partition.mountpoint
+                filesystem = disk_partition.fstype
+                disk_usage_info = get_disk_useage(Path=mount)
+                if not "error" in disk_usage_info:
                     result.append({
                         "mount": mount,
                         "filesystem": filesystem,
-                        **disk_useage_info
+                        **disk_usage_info
                     })
             except (PermissionError, OSError) as e:
                 continue
