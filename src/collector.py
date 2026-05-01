@@ -13,6 +13,7 @@ Author: Trinay Reddy Malireddy
 import psutil
 import time
 import subprocess
+import os
 from datetime import datetime
 
 def get_cpu_metrics():
@@ -139,49 +140,48 @@ def get_disk_metrics():
     except Exception as e:
         return {"error": str(e)}
 
+
 def get_top_processes(n=5):
+    """Get top N processes by CPU and memory.
+
+    Excludes the current process (the collector itself) to avoid
+    measurement bias — otherwise the collector shows up as a
+    top CPU consumer simply because it's actively running.
     """
-    Collect top n processes using psutil and transforms them into a
-    structured dictionary for AI analysis.
-    Args:
-        Number of processes to collect.
-    output:
-        dictionary:{
-            top_cpu:List of processes sorted by cpu,
-            top_memory:List of memory sorted processes,
-        }
-    :param n:
-    :return:
-    """
+    self_pid = os.getpid()  # ← NEW: know our own PID
+    # Also exclude parent (in case called via another script)
+    self_ppid = os.getppid()  # ← NEW
+    exclude_pids = {self_pid, self_ppid}  # ← NEW
+
     try:
-        for proc in psutil.process_iter():
+        procs = []
+        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent',
+                                         'memory_percent', 'username', 'cmdline']):
             try:
-                proc.cpu_percent(interval=None)
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
+                info = proc.info
 
-        time.sleep(0.5)
-
-        procs_data = []
-        for proc in psutil.process_iter(['pid','name','memory_percent','cpu_percent','username']):
-            try:
-                if not proc.cmdline():
+                # Skip self and parent
+                if info['pid'] in exclude_pids:  # ← NEW
                     continue
 
-                cpu_percent = proc.cpu_percent(interval=None)
-                procs_data.append({
-                    "pid": proc.info['pid'],
-                    "name": proc.info['name'],
-                    "cpu_percent": round(cpu_percent,2),
-                    "memory_percent": round(proc.info['memory_percent'] or 0,2),
-                    "username": proc.info['username'],
+                # Skip kernel threads (existing filter)
+                if not info.get('cmdline'):
+                    continue
+
+                procs.append({
+                    "pid": info['pid'],
+                    "name": info['name'],
+                    "cpu_percent": info.get('cpu_percent', 0) or 0,
+                    "memory_percent": round(info.get('memory_percent', 0) or 0, 2),
+                    "username": info.get('username', 'unknown')
                 })
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
-        top_cpu_data = sorted(procs_data, key=lambda x: x['cpu_percent'], reverse=True)[:n]
-        top_memory_data = sorted(procs_data,key=lambda x: x['memory_percent'], reverse=True)[:n]
 
-        return {"top_cpu": top_cpu_data, "top_memory": top_memory_data}
+        top_cpu = sorted(procs, key=lambda x: x['cpu_percent'], reverse=True)[:n]
+        top_mem = sorted(procs, key=lambda x: x['memory_percent'], reverse=True)[:n]
+
+        return {"top_cpu": top_cpu, "top_memory": top_mem}
     except Exception as e:
         return {"error": str(e)}
 
@@ -404,7 +404,7 @@ def collect_all():
         "processes": get_top_processes(n=5),
         "uptime": get_uptime(),
         "services": get_service_status(),
-        "logs": get_logs(hours=1),
+        "logs": get_logs(hours=24),
     }
 
 
