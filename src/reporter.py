@@ -8,6 +8,7 @@ import json
 import time
 from datetime import datetime
 from pathlib import Path
+from slack import notify as send_to_slack
 
 from dotenv import load_dotenv
 from anthropic import (
@@ -290,19 +291,16 @@ def main():
         print(f"\n{e}")
         return
 
-    # Validation
     validation_warnings = validate_report(report_md, system_data)
 
     hostname = system_data.get("metadata", {}).get("hostname", "unknown")
     filepath = save_report(report_md, hostname)
 
-    # Record successful run for rate limiting
     record_run()
 
-    # Cost tracking
     cost = calculate_cost(MODEL, usage.input_tokens, usage.output_tokens)
 
-    # Output summary
+    # Validation output
     if validation_warnings:
         print("\n⚠️  VALIDATION WARNINGS:")
         for w in validation_warnings:
@@ -310,13 +308,16 @@ def main():
     else:
         print("\n✅ Report passed validation checks")
 
+    # Slack notification  ← NEW
+    send_to_slack(report_md, hostname, cost, str(filepath))
+
+    # Terminal output
     print(f"\n📄 Report saved: {filepath}")
     print(f"📊 Tokens: input={usage.input_tokens}, output={usage.output_tokens}")
     print(f"💰 Cost: ${cost:.4f}")
     print("\n" + "=" * 60)
     print(report_md)
     print("=" * 60)
-
 
 if __name__ == "__main__":
     main()
