@@ -2,21 +2,18 @@
 
 **AI-powered Linux system health monitoring with defensive prompt engineering.**
 
-SysPulse collects system metrics, logs, and service status from a Linux server,
-then uses Claude (Anthropic's LLM) to generate a daily Markdown health report
-with triaged severity, pattern analysis, and actionable recommendations.
+SysPulse collects system metrics, logs, and service health from a Linux server, then uses Claude (Anthropic LLM) to generate a daily Markdown report with severity triage, pattern detection, and actionable insights.
 
-Built with safety rails, output validation, and cost tracking — because
-production AI needs more than just API calls.
+Built with **validation layers, safety rails, and cost awareness** — because production AI needs more than API calls.
 
 ---
 
 ## 🎥 Sample Report
 
 <details>
-<summary>Click to expand a real generated report</summary>
+<summary><strong>Click to expand a real generated report</strong></summary>
 
-\`\`\`markdown
+```markdown
 # 🖥️ SysPulse Daily Report — localhost.localdomain
 *Generated: 2026-05-01 05:03:26*
 
@@ -32,7 +29,7 @@ Multiple systemd services hitting watchdog timeouts every ~5 minutes...
 1. systemd-udevd (PID 6510) dumped core after watchdog timeout
 2. systemd-logind (PID 1196) dumped core
 ...
-\`\`\`
+```
 
 </details>
 
@@ -40,161 +37,147 @@ Multiple systemd services hitting watchdog timeouts every ~5 minutes...
 
 ## ✨ Features
 
-- 📊 **Metric Collection** — CPU, memory, disk, processes, uptime, services
-- 📜 **Log Analysis** — Extracts errors/warnings from `journalctl` (24h window)
-- 🤖 **AI Narrative** — Claude generates structured Markdown with root-cause inference
-- 🛡️ **Output Validation** — Fact-checks AI claims against source data
-- 💰 **Cost Tracking** — Reports USD cost per run
-- ⏱️ **Rate Limiting** — Prevents accidental API budget burn
-- 🔒 **Security-First** — No hardcoded secrets, input-sanitized subprocess calls
+* 📊 **Metric Collection** — CPU, memory, disk, processes, uptime, services
+* 📜 **Log Analysis** — Parses `journalctl` (last 24h) for warnings/errors
+* 🤖 **AI Narrative** — Claude generates structured Markdown reports
+* 🛡️ **Output Validation** — Cross-checks AI claims against raw data
+* 💰 **Cost Tracking** — Per-run USD visibility
+* ⏱️ **Rate Limiting** — Prevents runaway API usage
+* 💬 **Slack Notifications** — Sends triage summaries
+* ⏰ **Scheduled Runs** — Cron-based automation
+* ☁️ **Cloud-Ready** — AWS EC2 deployment ready
+* 🔒 **Security-First** — No hardcoded secrets, sanitized inputs
 
 ---
 
 ## 🚀 Quickstart
 
-\`\`\`bash
+```bash
 # Clone
 git clone https://github.com/YOUR_USERNAME/syspulse.git
 cd syspulse
 
-# Set up venv
+# Virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
-# Install
+# Install dependencies
 pip install -r requirements.txt
 
-# Configure
+# Configure environment
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+# Add ANTHROPIC_API_KEY
 
 # Run
 cd src
 python reporter.py
-\`\`\`
+```
 
 ---
 
 ## 🏗️ Architecture
 
-\`\`\`
+```
 ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│   collector  │─────▶│   reporter   │─────▶│  Claude API  │
-│   (psutil,   │      │  (prompt +   │      │              │
-│  subprocess) │      │  validator)  │◀─────│              │
+│  collector   │─────▶│   reporter   │─────▶│  Claude API  │
+│ (psutil +    │      │ (prompt +    │      │              │
+│ subprocess)  │      │ validator)   │◀─────│              │
 └──────────────┘      └──────────────┘      └──────────────┘
       │                     │
       ▼                     ▼
   Raw JSON            reports/*.md
-\`\`\`
+```
 
-**Defense-in-depth layers:**
-1. **Data quality** — collector filters virtual filesystems, kernel threads, self-process
-2. **Prompt engineering** — explicit field references, deterministic severity rules
-3. **Output validation** — regex-checks PIDs, CPU%, service mentions against JSON
-4. **Cost safety** — rate-limit file prevents runaway loops
+### 🛡️ Defense-in-Depth
+
+1. **Data Quality** — filters kernel threads, virtual FS, self-process
+2. **Prompt Design** — explicit fields + deterministic severity rules
+3. **Validation Layer** — regex + numeric checks against source data
+4. **Cost Safety** — rate limiting prevents runaway loops
 
 ---
 
 ## 🧪 Tech Stack
 
-**Language:** Python 3.10+
-**Libraries:** `psutil`, `anthropic`, `python-dotenv`
-**Platform:** Linux with `systemd` (tested on CentOS Stream 10)
-**AI Model:** Claude Sonnet 4.5
+* **Language:** Python 3.10+
+* **Libraries:** `psutil`, `anthropic`, `python-dotenv`
+* **Platform:** Linux (`systemd`) — tested on CentOS Stream 10
+* **Model:** Claude Sonnet 4.5
 
 ---
 
 ## 📂 Project Structure
 
-\`\`\`
+```
 syspulse/
 ├── src/
-│   ├── collector.py      # Gathers system metrics + logs
-│   ├── reporter.py       # AI report generator
-│   └── pricing.py        # API cost calculation
-├── reports/              # Generated Markdown reports (gitignored)
+│   ├── collector.py
+│   ├── reporter.py
+│   └── pricing.py
+├── reports/              # Generated (gitignored)
+├── logs/                 # Runtime logs
 ├── requirements.txt
 ├── .env.example
 └── README.md
-\`\`\`
+```
+
+---
+
+## ☁️ Production Deployment
+
+### Infrastructure
+
+* **EC2:** Amazon Linux 2023 (t3.micro)
+* **User:** Dedicated `syspulse` (no sudo)
+* **Secrets:** `.env` (600 permissions)
+* **Security:** IP-restricted SSH
+
+### Scheduling
+
+```cron
+# Daily at 9 AM IST
+0 9 * * * cd /home/syspulse/syspulse && venv/bin/python src/reporter.py >> logs/syspulse.log 2>&1
+```
+
+### Observability
+
+* Slack → triage summaries
+* Markdown reports → `reports/`
+* Logs → `logs/syspulse.log`
+* Cost tracking per run
+
+### Cost Profile
+
+* Per run: ~$0.02
+* Monthly: ~$0.60
+* EC2: Free tier or ~$7.50/month
+
+---
+
+## 🧠 Engineering Insights
+
+This project focuses on **trustworthy AI**, not just working AI:
+
+* **Observer effect** → monitoring tools measure themselves
+* **Confabulation risk** → LLMs invent plausible details
+* **Debugging rule** → most “AI bugs” are data bugs
+* **Defense in depth** → prompt + validation + rate limits
+* **Graceful degradation** → failures don’t break pipeline
+* **Dev–prod parity** → controlled environments prevent drift
+* **Least privilege** → minimized attack surface
 
 ---
 
 ## 🗺️ Roadmap
 
-- [x] **Day 1** — Metric collector (CPU, memory, disk, processes, services, logs)
-- [x] **Day 2** — AI reporter (Claude integration, validation, cost tracking)
-- [ ] **Day 3** — Slack notifications + EC2 deployment + cron schedule
-- [ ] **Day 4** — Documentation + launch
+* [x] Metric collector
+* [x] AI report generation
+* [x] Validation + cost tracking
+* [x] Slack + EC2 deployment
+* [ ] Web dashboard (future)
+* [ ] Multi-node monitoring
 
 ---
-
-## 💡 Engineering Notes
-
-This project was built with a focus on **trustworthy AI output**, not just
-working AI output. Key lessons learned:
-
-- **Observer effect** — monitoring tools measure themselves; collector excludes own PID
-- **Confabulation risk** — LLMs invent plausible details; validator catches numeric hallucinations
-- **Debugging hierarchy** — 90% of "AI bugs" are data bugs; always verify input first
-- **Defense in depth** — prompt + validator + rate limit = production-grade reliability
-
----
-
-## ✨ Features
-
-- 📊 **Metric Collection** — CPU, memory, disk, processes, uptime, services
-- 📜 **Log Analysis** — Extracts errors/warnings from `journalctl` (24h window)
-- 🤖 **AI Narrative** — Claude generates structured Markdown with root-cause inference
-- 🛡️ **Output Validation** — Fact-checks AI claims against source data
-- 💰 **Cost Tracking** — Reports USD cost per run
-- ⏱️ **Rate Limiting** — Prevents accidental API budget burn
-- 💬 **Slack Notifications** — Posts triage summary to a Slack channel
-- ⏰ **Scheduled Runs** — Cron-based daily execution
-- ☁️ **Cloud-Ready** — Deploys to AWS EC2 with hardened user model
-- 🔒 **Security-First** — No hardcoded secrets, least-privilege user, input-sanitized subprocess calls
-
-
-## ☁️ Production Deployment
-
-SysPulse runs on AWS EC2 with the following production patterns:
-
-### Infrastructure
-- **Instance:** Amazon Linux 2023, t3.micro (free tier eligible)
-- **User model:** Dedicated `syspulse` user with no sudo (least privilege)
-- **Secrets:** `.env` file with 600 permissions (production upgrade: AWS Secrets Manager)
-- **Firewall:** Security Group restricts SSH to known IP only
-
-### Scheduling
-\`\`\`cron
-# Daily report at 9 AM IST
-0 9 * * * cd /home/syspulse/syspulse && venv/bin/python src/reporter.py >> logs/syspulse.log 2>&1
-\`\`\`
-
-### Observability
-- Slack webhook posts triage summary to `#syspulse` channel
-- Full Markdown reports saved to `reports/` directory
-- Cron output captured in `logs/syspulse.log`
-- Cost tracked and shown in every run
-
-### Cost Profile
-- Per report: ~$0.02 (Claude Sonnet 4.5)
-- Monthly (daily cadence): ~$0.60
-- EC2 compute: ~$0 (free tier) or ~$7.50/mo (t3.micro on-demand)
-
-## 💡 Engineering Notes
-
-This project was built with a focus on **trustworthy AI output**, not just
-working AI output. Key lessons learned:
-
-- **Observer effect** — monitoring tools measure themselves; collector excludes own PID
-- **Confabulation risk** — LLMs invent plausible details; validator catches numeric hallucinations
-- **Debugging hierarchy** — 90% of "AI bugs" are data bugs; always verify input first
-- **Defense in depth** — prompt + validator + rate limit = production-grade reliability
-- **Graceful degradation** — Slack outage doesn't crash the reporter; notifications are logged, not required
-- **Dev-prod parity** — venv with explicit Python version prevents "works on my machine" drift
-- **Least privilege** — dedicated service user + IP-restricted SSH = attack surface minimized
 
 ## 📜 License
 
